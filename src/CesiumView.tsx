@@ -2,13 +2,92 @@ import * as Cesium from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import { useEffect, useRef } from "react";
 
-interface CesiumViewerProps {
-  roverLocation: any;
+// interface CesiumViewerProps {
+//   roverLocation: any;
+// }
+
+interface RoverConfig {
+  name: string;
+  positionFile: string;
+  waypointsFile: string;
+  modelAssetId: number;
+  modelScale?: number;
+  labelColor?: Cesium.Color;
+  waypointColor?: Cesium.Color;
 }
 
-const CesiumViewer = ({ roverLocation }: CesiumViewerProps) => {
+const CesiumViewer = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<Cesium.Viewer | null>(null);
+
+  const roverConfig = [
+    {
+      name: "Perseverance Rover",
+      positionFile: '../data/roverPosition.geojson',
+      waypointsFile: '../data/roverWaypoints.geojson',
+      modelAssetId: 3928150,
+      modelScale: 100.0,
+      labelColor: Cesium.Color.WHITE,
+      waypointColor: Cesium.Color.WHITE
+    },
+  ]
+
+
+
+
+  const loadRoverData = async (viewer: Cesium.Viewer, rover: RoverConfig ) => {
+
+    //Load rover postion data
+    const roverData = await Cesium.GeoJsonDataSource.load(rover.positionFile, {
+      clampToGround: true,
+    });
+    viewer.dataSources.add(roverData);
+
+    roverData.entities.values.forEach((entity) => {
+      entity.billboard = undefined;
+      entity.label = new Cesium.LabelGraphics({
+        text: rover.name,
+        font: "14pt monospace",
+      fillColor: Cesium.Color.WHITE,
+      outlineColor: Cesium.Color.BLACK,
+      outlineWidth: 2,
+      style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+      pixelOffset: new Cesium.Cartesian3(0, -40, 250),
+      heightReference: Cesium.HeightReference.NONE
+      });
+    });
+
+    // Bring in the 3D model
+    const resource = await Cesium.IonResource.fromAssetId(rover.modelAssetId)
+    const geoEntity = roverData.entities.values[0]
+    const position = geoEntity.position?.getValue(Cesium.JulianDate.now())
+
+    viewer.entities.add({
+      position: position,
+      model: { uri: resource, scale: 100.0 },
+    });
+
+
+    // Load the rover waypoints
+    const waypoints = await Cesium.GeoJsonDataSource.load(rover.waypointsFile, {
+      clampToGround: true
+    });
+    viewer.dataSources.add(waypoints);
+
+    const waypointEntities = waypoints.entities.values
+
+    waypointEntities.forEach((entity) => {
+      entity.point = new Cesium.PointGraphics({
+        pixelSize: 8,
+        color: Cesium.Color.WHITE,
+        outlineColor: Cesium.Color.BLACK,
+        outlineWidth: 2,
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+      })
+    });
+  }
+
+
 
   useEffect(() => {
     const initMarsViewer = async () => {
@@ -16,7 +95,8 @@ const CesiumViewer = ({ roverLocation }: CesiumViewerProps) => {
       if (!container) return;
 
       // Set your Cesium Ion access token
-      Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzYWUzNzU4NC1iODhmLTRkNTAtOTA4Ni03M2RhNjQzMWU4YTUiLCJpZCI6MjQ3MDA3LCJpYXQiOjE3NjA3MzQ0NTV9.oMBm05CPCqpeAR-n7XTG7S7ErypoRA0aVA8Eiv4JWfE'
+      Cesium.Ion.defaultAccessToken = import.meta.env.VITE_CESIUM_ION_ACCESS_TOKEN;
+      
 
       // Set Mars as the default ellipsoid
       Cesium.Ellipsoid.default = Cesium.Ellipsoid.MARS;
@@ -43,92 +123,10 @@ const CesiumViewer = ({ roverLocation }: CesiumViewerProps) => {
         const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(3644333);
         viewer.scene.primitives.add(tileset);
 
+        await Promise.all([
+          roverConfig.map(rover => loadRoverData(viewer, rover))
+        ])
 
-        // Perseverance Rover Location
-        const perseveranceLocation = await Cesium.GeoJsonDataSource.load('../public/data/roverPosition.geojson', {
-          clampToGround: true,
-        });
-        viewer.dataSources.add(perseveranceLocation);
-
-        perseveranceLocation.entities.values.forEach((entity) => {
-          entity.billboard = undefined;
-          entity.label = new Cesium.LabelGraphics({
-            text: "Perseverance Rover",
-            font: "14pt monospace",
-            fillColor: Cesium.Color.WHITE,
-            outlineColor: Cesium.Color.BLACK,
-            outlineWidth: 2,
-            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-            pixelOffset: new Cesium.Cartesian3(0, -40, 250),
-            heightReference: Cesium.HeightReference.NONE
-          });
-        });
-        const resource = await Cesium.IonResource.fromAssetId(3928150);
-        const geoEntity = perseveranceLocation.entities.values[0];
-        const position = geoEntity.position.getValue(Cesium.JulianDate.now());
-
-        const entity = viewer.entities.add({
-          position: position,
-          model: { uri: resource, scale: 100.0 },
-        });
-
-        // viewer.trackedEntity = entity;
-
-
-        // Perseverance Waypoints
-        const waypoints = await Cesium.GeoJsonDataSource.load('../public/data/roverWaypoints.geojson', {
-          clampToGround: true
-        });
-        viewer.dataSources.add(waypoints);
-
-        const waypointEntities = waypoints.entities.values
-
-        waypointEntities.forEach((entity) => {
-          entity.point = new Cesium.PointGraphics({
-            pixelSize: 8,
-            color: Cesium.Color.WHITE,
-            outlineColor: Cesium.Color.BLACK,
-            outlineWidth: 2,
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-          })
-        });
-
-
-        const roverWaypoints = waypoints.entities.values.forEach((entity) => {
-          if (entity.point) {
-            console.log('Waypoint entity found:', entity);
-          }
-        })
-
-
-
-
-        // const roverEntity = dataSource.entities.add({
-        //   name: "Mars Rover",
-        //   position: Cesium.Cartesian3.fromDegrees(longitude, latitude, height),
-        //   point: {
-        //     pixelSize: 10,
-        //     color: Cesium.Color.YELLOW,
-        //     outlineColor: Cesium.Color.BLACK,
-        //     outlineWidth: 2,
-        //     heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-        //   },
-        //   label: {
-        //     text: "Mars Rover Location",
-        //     font: "14pt monospace",
-        //     fillColor: Cesium.Color.WHITE,
-        //     outlineColor: Cesium.Color.BLACK,
-        //     outlineWidth: 2,
-        //     style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-        //     pixelOffset: new Cesium.Cartesian2(0, -40),
-        //   },
-        // });
-
-
-        // viewer.flyTo(roverEntity, {
-        //   duration: 3.0,
-        //   offset: new Cesium.HeadingPitchRange(0.0, -0.5, 5000.0)
-        // });
        
       } catch (error) {
         console.error("Failed to load Mars tileset:", error);

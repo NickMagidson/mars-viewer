@@ -19,7 +19,7 @@ function App() {
 
 
   return (
-    <CesiumViewer roverLocation={roverLocation} />
+    <CesiumViewer />
   )
 }
 

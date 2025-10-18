@@ -27,7 +27,7 @@ const CesiumViewer = ({ roverLocation }: CesiumViewerProps) => {
         sceneModePicker: false, // 3D only
         baseLayerPicker: false, // no Earth imagery
         geocoder: false, // no Earth search
-        homeButton: false,
+        homeButton: true,
         timeline: false,
         animation: false,
         navigationHelpButton: false,
@@ -44,18 +44,44 @@ const CesiumViewer = ({ roverLocation }: CesiumViewerProps) => {
         viewer.scene.primitives.add(tileset);
 
 
-        // const dataSource = await Cesium.GeoJsonDataSource.load(roverLocation)
-        // viewer.dataSources.add(roverLocation);
-        // console.log('GEO data has loaded after source is added to viewer', roverLocation);
+        // Perseverance Rover Location
+        const perseveranceLocation = await Cesium.GeoJsonDataSource.load('../public/data/roverPosition.geojson', {
+          clampToGround: true,
+        });
+        viewer.dataSources.add(perseveranceLocation);
 
-        const dataSource = await Cesium.GeoJsonDataSource.load('../public/data/roverPosition.geojson')
-        viewer.dataSources.add(dataSource);
+        perseveranceLocation.entities.values.forEach((entity) => {
+          entity.billboard = undefined;
+          entity.label = new Cesium.LabelGraphics({
+            text: "Perseverance Rover",
+            font: "14pt monospace",
+            fillColor: Cesium.Color.WHITE,
+            outlineColor: Cesium.Color.BLACK,
+            outlineWidth: 2,
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            pixelOffset: new Cesium.Cartesian3(0, -40, 250),
+            heightReference: Cesium.HeightReference.NONE
+          });
+        });
+        const resource = await Cesium.IonResource.fromAssetId(3928150);
+        const geoEntity = perseveranceLocation.entities.values[0];
+        const position = geoEntity.position.getValue(Cesium.JulianDate.now());
 
-        const waypoints = await Cesium.GeoJsonDataSource.load('../public/data/roverWaypoints.geojson')
-        viewer.dataSources.add(waypoints)
+        const entity = viewer.entities.add({
+          position: position,
+          model: { uri: resource, scale: 100.0 },
+        });
+
+        // viewer.trackedEntity = entity;
+
+
+        // Perseverance Waypoints
+        const waypoints = await Cesium.GeoJsonDataSource.load('../public/data/roverWaypoints.geojson', {
+          clampToGround: true
+        });
+        viewer.dataSources.add(waypoints);
 
         const waypointEntities = waypoints.entities.values
-        console.log('Rover entity values:', waypointEntities)
 
         waypointEntities.forEach((entity) => {
           entity.point = new Cesium.PointGraphics({

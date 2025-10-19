@@ -23,17 +23,23 @@ const CesiumViewer = () => {
   const roverConfig = [
     {
       name: "Perseverance Rover",
-      positionFile: '../data/roverPosition.geojson',
-      waypointsFile: '../data/roverWaypoints.geojson',
+      positionFile: '/data/roverPosition.geojson',
+      waypointsFile: '/data/roverWaypoints.geojson',
       modelAssetId: 3928150,
       modelScale: 100.0,
       labelColor: Cesium.Color.WHITE,
       waypointColor: Cesium.Color.WHITE
     },
+    // {
+    //   name: "Curiosity Rover",
+    //   positionFile: '/data/curiosityPosition.geojson',
+    //   waypointsFile: '/data/curiosityWaypoints.geojson',
+    //   modelAssetId: 3932344,
+    //   modelScale: 50.0,
+    //   labelColor: Cesium.Color.WHITE,
+    //   waypointColor: Cesium.Color.WHITE
+    // }
   ]
-
-
-
 
   const loadRoverData = async (viewer: Cesium.Viewer, rover: RoverConfig ) => {
 
@@ -86,8 +92,7 @@ const CesiumViewer = () => {
       })
     });
   }
-
-
+  
 
   useEffect(() => {
     const initMarsViewer = async () => {

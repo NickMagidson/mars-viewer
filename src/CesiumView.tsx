@@ -10,6 +10,7 @@ interface RoverConfig {
   name: string;
   positionFile: string;
   waypointsFile: string;
+  drivePathFile: string;
   modelAssetId: number;
   modelScale?: number;
   labelColor?: Cesium.Color;
@@ -25,6 +26,7 @@ const CesiumViewer = () => {
       name: "Perseverance Rover",
       positionFile: '/data/roverPosition.geojson',
       waypointsFile: '/data/roverWaypoints.geojson',
+      drivePathFile: '/data/perseveranceDrivePath.geojson',
       modelAssetId: 3928150,
       modelScale: 100.0,
       labelColor: Cesium.Color.WHITE,
@@ -90,6 +92,21 @@ const CesiumViewer = () => {
         outlineWidth: 2,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
       })
+    });
+
+    const roverDrivePath = await Cesium.GeoJsonDataSource.load(rover.drivePathFile, {
+      clampToGround: true
+    });
+    viewer.dataSources.add(roverDrivePath);
+
+    // Style the drive path polyline
+    const drivePathEntities = roverDrivePath.entities.values;
+    drivePathEntities.forEach((entity) => {
+      if (entity.polyline) {
+        entity.polyline.material = new Cesium.ColorMaterialProperty(Cesium.Color.WHITESMOKE);
+        entity.polyline.width = new Cesium.ConstantProperty(3);
+        entity.polyline.clampToGround = new Cesium.ConstantProperty(true);
+      }
     });
   }
   

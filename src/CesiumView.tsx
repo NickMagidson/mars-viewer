@@ -118,10 +118,28 @@ const CesiumViewer = () => {
         navigationHelpButton: false,
         fullscreenButton: false,
         skyBox: Cesium.SkyBox.createEarthSkyBox(),
-        // skyAtmosphere: new Cesium.SkyAtmosphere(Cesium.Ellipsoid.MARS),
+        skyAtmosphere: new Cesium.SkyAtmosphere(Cesium.Ellipsoid.MARS),
       });
 
       viewerRef.current = viewer;
+
+      const scene = viewer.scene;
+      if (scene.skyAtmosphere) {
+        scene.skyAtmosphere.atmosphereMieCoefficient = new Cesium.Cartesian3(
+          9.0e-5,
+          2.0e-5,
+          1.0e-5,
+        );
+        scene.skyAtmosphere.atmosphereRayleighCoefficient = new Cesium.Cartesian3(
+          9.0e-6,
+          2.0e-6,
+          1.0e-6,
+        );
+        scene.skyAtmosphere.atmosphereRayleighScaleHeight = 9000;
+        scene.skyAtmosphere.atmosphereMieScaleHeight = 2700.0;
+        scene.skyAtmosphere.saturationShift = -0.1;
+        scene.skyAtmosphere.perFragmentAtmosphere = true;
+      }
 
       try {
         // Load Mars 3D Tileset (from Cesium Ion)

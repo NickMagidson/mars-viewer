@@ -19,3 +19,8 @@ html, body {
 .cesium-viewer-toolbar {
   z-index: 10000;
 }
+
+.cesium-credit-wrapper,
+.cesium-credit-expand-link {
+  display: none;
+}

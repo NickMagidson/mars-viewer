@@ -53,7 +53,7 @@ const CesiumViewer = () => {
       entity.billboard = undefined;
       entity.label = new Cesium.LabelGraphics({
         text: rover.name,
-        font: "14pt monospace",
+        font: "14pt Helvetica",
       fillColor: Cesium.Color.WHITE,
       outlineColor: Cesium.Color.BLACK,
       outlineWidth: 2,

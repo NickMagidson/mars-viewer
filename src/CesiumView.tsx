@@ -15,6 +15,7 @@ interface RoverConfig {
   modelScale?: number;
   labelColor?: Cesium.Color;
   waypointColor?: Cesium.Color;
+  waypointHeightOffset?: number; // Height offset in meters for waypoints
 }
 
 const CesiumViewer = () => {
@@ -30,17 +31,19 @@ const CesiumViewer = () => {
       modelAssetId: 3928150,
       modelScale: 100.0,
       labelColor: Cesium.Color.WHITE,
-      waypointColor: Cesium.Color.WHITE
+      waypointColor: Cesium.Color.WHITE,
     },
-    // {
-    //   name: "Curiosity Rover",
-    //   positionFile: '/data/curiosityPosition.geojson',
-    //   waypointsFile: '/data/curiosityWaypoints.geojson',
-    //   modelAssetId: 3932344,
-    //   modelScale: 50.0,
-    //   labelColor: Cesium.Color.WHITE,
-    //   waypointColor: Cesium.Color.WHITE
-    // }
+    {
+      name: "Curiosity Rover",
+      positionFile: '/data/curiosityPosition.geojson',
+      waypointsFile: '/data/curiosityWaypoints.geojson',
+      drivePathFile: '/data/curiosityDrivePath.geojson',
+      modelAssetId: 3932344,
+      modelScale: 100.0,
+      labelColor: Cesium.Color.WHITE,
+      waypointColor: Cesium.Color.WHITE,
+      waypointHeightOffset: 100.0 // Raise Curiosity waypoints 200 meters above ground
+    }
   ]
 
   const loadRoverData = async (viewer: Cesium.Viewer, rover: RoverConfig ) => {
@@ -53,12 +56,17 @@ const CesiumViewer = () => {
 
     roverData.entities.values.forEach((entity) => {
       entity.billboard = undefined;
+      entity.point = new Cesium.PointGraphics({
+        pixelSize: 10,
+        color: Cesium.Color.WHITE,
+        outlineColor: Cesium.Color.BLACK,
+        outlineWidth: 2,
+      });
       entity.label = new Cesium.LabelGraphics({
         text: rover.name,
         font: "14pt Helvetica",
       fillColor: Cesium.Color.WHITE,
-      outlineColor: Cesium.Color.BLACK,
-      outlineWidth: 2,
+      
       style: Cesium.LabelStyle.FILL_AND_OUTLINE,
       pixelOffset: new Cesium.Cartesian3(0, -40, 250),
       heightReference: Cesium.HeightReference.NONE
@@ -83,15 +91,35 @@ const CesiumViewer = () => {
     viewer.dataSources.add(waypoints);
 
     const waypointEntities = waypoints.entities.values
+    console.log(`Loaded ${waypointEntities.length} waypoints for ${rover.name}`);
 
     waypointEntities.forEach((entity) => {
+      // Remove the default billboard
+      entity.billboard = undefined;
+      
+      // Apply height offset if configured
+      if (rover.waypointHeightOffset && entity.position) {
+        const currentPosition = entity.position.getValue(Cesium.JulianDate.now());
+        if (currentPosition) {
+          const cartographic = Cesium.Cartographic.fromCartesian(currentPosition);
+          cartographic.height += rover.waypointHeightOffset;
+          const newPosition = Cesium.Cartesian3.fromRadians(
+            cartographic.longitude, 
+            cartographic.latitude, 
+            cartographic.height
+          );
+          entity.position = new Cesium.ConstantPositionProperty(newPosition);
+        }
+      }
+      
+      // Create a new point graphic
       entity.point = new Cesium.PointGraphics({
         pixelSize: 8,
-        color: Cesium.Color.WHITE,
+        color: rover.waypointColor || Cesium.Color.YELLOW,
         outlineColor: Cesium.Color.BLACK,
         outlineWidth: 2,
-        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-      })
+        heightReference: Cesium.HeightReference.NONE
+      });
     });
 
     const roverDrivePath = await Cesium.GeoJsonDataSource.load(rover.drivePathFile, {

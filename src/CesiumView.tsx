@@ -46,6 +46,38 @@ const CesiumViewer = () => {
     }
   ]
 
+  // const loadNomenclatureData = async (viewer: Cesium.Viewer) => {
+  //   const nomenclatureData = await Cesium.GeoJsonDataSource.load('/data/mars_nomenclature.geojson', {
+  //     clampToGround: true,
+  //   });
+  //   viewer.dataSources.add(nomenclatureData);
+
+  //   nomenclatureData.entities.values.forEach((entity) => {
+
+  //     entity.billboard = undefined; // Remove default
+
+  //     entity.point = new Cesium.PointGraphics({
+  //       pixelSize: 4,
+  //       color: Cesium.Color.AQUAMARINE.withAlpha(0.8), // Low opacity
+  //       outlineColor: Cesium.Color.BLACK.withAlpha(0.5),
+  //       outlineWidth: 1,
+  //       heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
+  //     })
+
+  //     entity.label = new Cesium.LabelGraphics({
+  //       text: entity.name || "",
+  //       font: "16pt Helvetica", // Larger font
+  //       fillColor: Cesium.Color.WHITE,
+  //       outlineColor: Cesium.Color.BLACK,
+  //       outlineWidth: 2,
+  //       pixelOffset: new Cesium.Cartesian2(0, -15),
+  //       distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0.0, 2000000.0), 
+  //       scaleByDistance: new Cesium.NearFarScalar(2000.0, 2.5, 40000.0, 1.0), // Scale from 250% at 2km to 100% at 40km
+  //       heightReference: Cesium.HeightReference.RELATIVE_TO_TERRAIN
+  //   });
+  // });
+  // }
+
   const loadRoverData = async (viewer: Cesium.Viewer, rover: RoverConfig ) => {
 
     //Load rover postion data
@@ -195,6 +227,8 @@ const CesiumViewer = () => {
           roverConfig.map(rover => loadRoverData(viewer, rover))
         ])
 
+        // await loadNomenclatureData(viewer);
+
        
       } catch (error) {
         console.error("Failed to load Mars tileset:", error);
@@ -203,6 +237,7 @@ const CesiumViewer = () => {
 
     initMarsViewer();
 
+    
 
     return () => {
       if (viewerRef.current && !viewerRef.current.isDestroyed()) {

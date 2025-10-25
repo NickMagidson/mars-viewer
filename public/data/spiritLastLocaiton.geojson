@@ -1,0 +1,12 @@
+{
+  "type": "Feature",
+  "geometry": {
+    "type": "Point",
+    "coordinates": [175.472636, -14.5684]
+  },
+  "properties": {
+    "name": "Spirit Rover (Final Location)",
+    "description": "Last known position of the Spirit rover, which became stuck in soft sand at 'Troy' in May 2009 and ceased communication on March 22, 2010.",
+    "crater": "Gusev Crater"
+  }
+}

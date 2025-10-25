@@ -1,23 +1,10 @@
 import { Header, HeaderContainer, HeaderMenu, HeaderMenuButton, HeaderMenuItem, HeaderName, HeaderNavigation, HeaderSideNavItems, SideNav, SideNavItems } from "@carbon/react";
 // import * as Cesium from "cesium";
-import "cesium/Build/Cesium/Widgets/widgets.css";
+// import "cesium/Build/Cesium/Widgets/widgets.css";
 // import { useEffect, useState } from 'react';
 import CesiumViewer from './CesiumView';
 
 function App() {
-  // const [roverLocation, setRoverLocation] = useState<any>(null);
-  // const [selectedRover, setSelectedRover] = useState<string>(null);
-
-  // This fetches on mount. Import would be different wiht direct cesium
-  // useEffect(() => {
-    
-  //   const roverData = Cesium.GeoJsonDataSource.load('../public/data/roverPosition.geojson');
-  //   setRoverLocation(roverData);
-
-  // }, []);
-
-  // console.log('Rover Location on mount:', roverLocation);
-
 
   return (
     <>

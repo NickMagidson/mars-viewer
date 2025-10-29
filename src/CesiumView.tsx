@@ -1,10 +1,10 @@
 import * as Cesium from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
-import { useEffect, useRef } from "react";
+import { useEffect, useImperativeHandle, useRef, useState } from "react";
 
-// interface CesiumViewerProps {
-//   roverLocation: any;
-// }
+interface CesiumViewerProps {
+  cesiumViewerRef: React.RefObject<any>;
+}
 
 interface RoverConfig {
   name: string;
@@ -18,9 +18,12 @@ interface RoverConfig {
   waypointHeightOffset?: number; // Height offset in meters for waypoints
 }
 
-const CesiumViewer = () => {
+const CesiumViewer = ({ cesiumViewerRef }: CesiumViewerProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<Cesium.Viewer | null>(null);
+  const roverPositionRef = useRef<{ [key: string]: Cesium.Cartesian3 }>({});
+  const nomenclatureDataRef = useRef<Cesium.GeoJsonDataSource | null>(null);
+  const [nomenclatureVisible, setNomenclatureVisible] = useState(true);
 
   const roverConfig = [
     {
@@ -46,37 +49,94 @@ const CesiumViewer = () => {
     }
   ]
 
-  // const loadNomenclatureData = async (viewer: Cesium.Viewer) => {
-  //   const nomenclatureData = await Cesium.GeoJsonDataSource.load('/data/mars_nomenclature.geojson', {
-  //     clampToGround: true,
-  //   });
-  //   viewer.dataSources.add(nomenclatureData);
+const flyToRover = (roverName: string) => {
+  const viewer = viewerRef.current;
+  const position = roverPositionRef.current[roverName];
 
-  //   nomenclatureData.entities.values.forEach((entity) => {
+  if(viewer && position) {
+    // Convert position to cartographic to add height
+    const cartographic = Cesium.Cartographic.fromCartesian(position);
+    cartographic.height += 5000; // Add 5000 meters altitude above the rover
+    
+    const destinationWithHeight = Cesium.Cartesian3.fromRadians(
+      cartographic.longitude,
+      cartographic.latitude,
+      cartographic.height
+    );
 
-  //     entity.billboard = undefined; // Remove default
+    viewer.camera.flyTo({
+      destination: destinationWithHeight,
+      // orientation: {
+      //   heading: Cesium.Math.toRadians(0.0),
+      //   pitch: Cesium.Math.toRadians(0.0),
+      //   roll: 0.0,
+      // },
+      duration: 3,
+    });
+  }
+};
 
-  //     entity.point = new Cesium.PointGraphics({
-  //       pixelSize: 4,
-  //       color: Cesium.Color.AQUAMARINE.withAlpha(0.8), // Low opacity
-  //       outlineColor: Cesium.Color.BLACK.withAlpha(0.5),
-  //       outlineWidth: 1,
-  //       heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
-  //     })
+  const toggleNomenclature = () => {
+    console.log('Toggle nomenclature called');
+    console.log('nomenclatureDataRef.current:', nomenclatureDataRef.current);
+    console.log('current nomenclatureVisible:', nomenclatureVisible);
+    
+    const nomenclatureData = nomenclatureDataRef.current;
+    if (nomenclatureData) {
+      const newVisibility = !nomenclatureVisible;
+      nomenclatureData.show = newVisibility;
+      setNomenclatureVisible(newVisibility);
+      console.log('Set nomenclature visibility to:', newVisibility);
+    } else {
+      console.log('nomenclatureData is null or undefined');
+    }
+  };
 
-  //     entity.label = new Cesium.LabelGraphics({
-  //       text: entity.name || "",
-  //       font: "16pt Helvetica", // Larger font
-  //       fillColor: Cesium.Color.WHITE,
-  //       outlineColor: Cesium.Color.BLACK,
-  //       outlineWidth: 2,
-  //       pixelOffset: new Cesium.Cartesian2(0, -15),
-  //       distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0.0, 2000000.0), 
-  //       scaleByDistance: new Cesium.NearFarScalar(2000.0, 2.5, 40000.0, 1.0), // Scale from 250% at 2km to 100% at 40km
-  //       heightReference: Cesium.HeightReference.RELATIVE_TO_TERRAIN
-  //   });
-  // });
-  // }
+  // Lets me customize the ref that is passed
+  useImperativeHandle(cesiumViewerRef, () => ({
+    flyToRover,
+    toggleNomenclature
+  }));
+
+
+
+
+
+
+  const loadNomenclatureData = async (viewer: Cesium.Viewer) => {
+    console.log('Loading nomenclature data...');
+    const nomenclatureData = await Cesium.GeoJsonDataSource.load('/data/mars_nomenclature.geojson', {
+      clampToGround: true,
+    });
+    viewer.dataSources.add(nomenclatureData);
+    nomenclatureDataRef.current = nomenclatureData;
+    console.log('Nomenclature data loaded and stored in ref:', nomenclatureData);
+
+    nomenclatureData.entities.values.forEach((entity) => {
+
+      entity.billboard = undefined; // Remove default
+
+      entity.point = new Cesium.PointGraphics({
+        pixelSize: 4,
+        color: Cesium.Color.AQUAMARINE.withAlpha(0.8), // Low opacity
+        outlineColor: Cesium.Color.BLACK.withAlpha(0.5),
+        outlineWidth: 1,
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
+      })
+
+      entity.label = new Cesium.LabelGraphics({
+        text: entity.name || "",
+        font: "16pt Helvetica", // Larger font
+        fillColor: Cesium.Color.WHITE,
+        outlineColor: Cesium.Color.BLACK,
+        outlineWidth: 2,
+        pixelOffset: new Cesium.Cartesian2(0, -15),
+        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0.0, 2000000.0), 
+        scaleByDistance: new Cesium.NearFarScalar(2000.0, 2.5, 40000.0, 1.0), // Scale from 250% at 2km to 100% at 40km
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
+    });
+  });
+  }
 
   const loadRoverData = async (viewer: Cesium.Viewer, rover: RoverConfig ) => {
 
@@ -105,10 +165,15 @@ const CesiumViewer = () => {
       });
     });
 
+    
+
     // Bring in the 3D model
     const resource = await Cesium.IonResource.fromAssetId(rover.modelAssetId)
     const geoEntity = roverData.entities.values[0]
     const position = geoEntity.position?.getValue(Cesium.JulianDate.now())
+    if(position) {
+      roverPositionRef.current[rover.name] = position;
+    }
 
     viewer.entities.add({
       position: position,
@@ -224,10 +289,11 @@ const CesiumViewer = () => {
         viewer.scene.primitives.add(tileset);
 
         await Promise.all([
-          roverConfig.map(rover => loadRoverData(viewer, rover))
+          ...roverConfig.map(rover => loadRoverData(viewer, rover)),
+          loadNomenclatureData(viewer)
         ])
 
-        // await loadNomenclatureData(viewer);
+      
 
        
       } catch (error) {
